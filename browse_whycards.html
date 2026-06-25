@@ -24,6 +24,11 @@ body{background:#f0f0f0;font-family:'Apple SD Gothic Neo',sans-serif;min-height:
 .wi02-SKIP{background:#e8f5e9;color:#2e7d32}
 .wi02-FLAG{background:#fff3cd;color:#856404}
 .wi02-BLOCK{background:#fdecea;color:#c62828}
+.acr-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;margin-bottom:6px;margin-left:6px}
+.acr-AGREE_GOLD,.acr-MAJORITY_GOLD{background:#c8e6c9;color:#1b5e20}
+.acr-AGREE_OUT,.acr-MAJORITY_OUT{background:#fdecea;color:#b71c1c}
+.acr-AGREE_HOLD,.acr-MAJORITY_HOLD{background:#fff8e1;color:#e65100}
+.acr-DISAGREE{background:#ede7f6;color:#4527a0}
 .verdicts{display:flex;gap:8px;margin:14px 0 8px}
 .v-btn{flex:1;padding:12px 4px;border:2px solid #ddd;border-radius:10px;background:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
 .v-btn.sel-gold{background:#2e7d32;color:#fff;border-color:#2e7d32}
@@ -95,10 +100,10 @@ function load() {
 async function init() {
   load();
   try {
-    var r = await fetch('whycard_manifest_240.json');
+    var r = await fetch('whycard_manifest_500.json');
     CARDS = await r.json();
   } catch(e) {
-    document.getElementById('wc-display').innerHTML = '<p style="color:red;padding:20px">whycard_manifest_240.json 로드 실패</p>';
+    document.getElementById('wc-display').innerHTML = '<p style="color:red;padding:20px">whycard_manifest_500.json 로드 실패</p>';
     return;
   }
   render();
@@ -138,6 +143,7 @@ function render() {
     '<img src="' + c.url + '" alt="" onerror="this.style.background=\'#ddd\'">' +
     '<div class="wcard-body">' +
     '<span class="wi02-badge wi02-' + wi + '">WI-02: ' + wi + '</span>' +
+    '<span class="acr-badge acr-' + (c.acr_result||'') + '">ACR: ' + (c.acr_result||'미평가') + '</span>' +
     '<div class="verse-ref">' + esc(c.verse_ref) + '</div>' +
     '<div class="verse-text">' + esc(c.verse_text) + '</div>' +
     '<div class="field"><div class="field-label">' + L.s1_label + '</div><div class="field-val">' + esc(c.S1) + '</div></div>' +
