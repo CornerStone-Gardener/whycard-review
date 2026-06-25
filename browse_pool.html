@@ -2,252 +2,306 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ODINA Pool Browse</title>
 <style>
-body{font-family:sans-serif;background:#f4f4f4;margin:0;padding:0}
-#header{background:#1a1a2e;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
-#header h1{margin:0;font-size:16px;font-weight:700}
-#progress{font-size:13px;color:#aaa;flex:1}
-#resume-btn{background:#e8a030;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;display:none}
-#batch-info{background:#fff;border-bottom:1px solid #ddd;padding:10px 20px;font-size:13px;color:#555;display:flex;gap:20px;align-items:center}
-#batch-info span{font-weight:700;color:#1a1a2e}
-#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;padding:16px 20px}
-.card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.12);position:relative}
-.card img{width:100%;height:180px;object-fit:cover;display:block;background:#eee}
-.card-body{padding:8px}
-.card-id{font-size:10px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:6px}
-.btns{display:flex;gap:6px}
-.btn-pick{flex:1;background:#2e7d32;color:#fff;border:none;padding:8px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700}
-.btn-skip{flex:1;background:#fff;color:#888;border:1.5px dashed #ccc;padding:8px;border-radius:8px;cursor:pointer;font-size:12px}
-.btn-pick:hover{background:#1b5e20}
-.btn-skip:hover{background:#f5f5f5}
-.card.picked{outline:3px solid #2e7d32}
-.card.skipped{opacity:.45}
-.picked-badge{position:absolute;top:8px;right:8px;background:#2e7d32;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:20px}
-#footer{background:#fff;border-top:2px solid #1a1a2e;padding:16px 20px;display:flex;align-items:center;gap:16px;position:sticky;bottom:0}
-#next-btn{margin-left:auto;background:#1a1a2e;color:#fff;border:none;padding:12px 28px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700}
-#next-btn:disabled{background:#aaa;cursor:default}
-#done-screen{display:none;text-align:center;padding:60px 20px}
-#notice{background:#fff3cd;border:1px solid #ffc107;padding:10px 16px;margin:12px 20px;border-radius:8px;font-size:13px;color:#856404;display:none}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:#eef1f5;color:#1c2430;line-height:1.55}
+.wrap{max-width:440px;margin:0 auto;padding:14px 14px 80px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:6px 2px 12px}
+.top h1{font-size:16px;margin:0;font-weight:700}
+.gauge{font-size:11px;background:#fff;border-radius:10px;padding:6px 9px;box-shadow:0 1px 3px rgba(0,0,0,.08);text-align:right}
+.gauge b{color:#0a7d4d}
+.card{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden;margin-bottom:16px}
+.photo{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#cdd8e6}
+.pad{padding:15px 16px}
+.progress{font-size:12px;color:#7a8696;margin-bottom:10px}
+.imgid{font-size:11px;color:#aab;margin-bottom:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.step{padding:11px 0;border-bottom:1px solid #eef1f5}
+.step:last-child{border-bottom:none}
+.step .lbl{font-size:11px;font-weight:700;color:#3a6ea5;letter-spacing:.3px;margin-bottom:5px}
+.rate{display:flex;gap:6px;margin:4px 0}
+.rate button{flex:1;border:1.5px solid #d6dde7;background:#fff;border-radius:9px;padding:7px 0;font-size:13px;cursor:pointer;transition:.12s}
+.rate button.ok.on{background:#0a7d4d;color:#fff;border-color:#0a7d4d}
+.rate button.fix.on{background:#b54708;color:#fff;border-color:#b54708}
+.rate button.no.on{background:#b42318;color:#fff;border-color:#b42318}
+.verdict{display:flex;gap:8px;margin:14px 0 4px}
+.verdict button{flex:1;border:none;border-radius:11px;padding:13px 0;font-size:14px;font-weight:700;cursor:pointer;color:#fff;opacity:.4;transition:.12s}
+.verdict .approve{background:#0a7d4d}
+.verdict .modify{background:#b54708}
+.verdict .reject{background:#b42318}
+.verdict button.on{opacity:1;transform:translateY(-1px)}
+.comment{width:100%;border:1.5px solid #d6dde7;border-radius:9px;padding:9px;margin-top:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px}
+.submit{width:100%;background:#1c2430;color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:700;margin-top:12px;cursor:pointer}
+.submit:disabled{opacity:.4}
+.skip-btn{width:100%;background:#fff;color:#888;border:1.5px dashed #ccc;border-radius:12px;padding:10px;font-size:13px;margin-top:6px;cursor:pointer}
+.batch-done{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:24px;text-align:center;margin-bottom:16px}
+.next-btn{background:#0a7d4d;color:#fff;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:700;cursor:pointer;width:100%;margin-top:12px}
+.resume-bar{background:#fff3cd;border:1px solid #ffc107;border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.resume-bar span{font-size:13px;color:#856404}
+.resume-bar button{background:#e8a030;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer}
+.done{text-align:center;padding:40px 20px}
+.done h2{color:#0a7d4d}
 </style>
 </head>
 <body>
-<div id="header">
-  <h1 id="h-title">ODINA Pool Browse</h1>
-  <div id="progress">Loading...</div>
-  <button id="resume-btn" onclick="resumeSession()">Resume</button>
-</div>
-<div id="batch-info">
-  Batch <span id="batch-num">-</span> / <span id="batch-total">-</span>
-  &nbsp;|&nbsp; Images <span id="img-range">-</span>
-  &nbsp;|&nbsp; Selected: <span id="picked-count">0</span>
-</div>
-<div id="notice"></div>
-<div id="grid"></div>
-<div id="footer">
-  <div style="font-size:13px;color:#555">
-    Selected: <b id="f-picked" style="color:#2e7d32">0</b>
-    &nbsp;/ Skipped: <b id="f-skipped">0</b>
-    &nbsp;/ Pending: <b id="f-pending">100</b>
+<div class="wrap">
+  <div class="top">
+    <h1 id="h1">Pool Browse</h1>
+    <div class="gauge">
+      <b id="g_done">0</b>/<span id="g_total">-</span>
+      &nbsp;&#183;&nbsp;
+      <b id="g_picked">0</b> <span id="lbl_selected">selected</span>
+    </div>
   </div>
-  <button id="next-btn" onclick="completeBatch()" disabled>Save &amp; Next 100 &#9654;</button>
+  <div id="resume-bar" class="resume-bar" style="display:none">
+    <span id="resume-msg">Resume?</span>
+    <button id="resume-btn">Resume &#9654;</button>
+  </div>
+  <div id="host"></div>
 </div>
-<div id="done-screen">
-  <h2>Complete!</h2>
-  <p>Total selected: <b id="total-picked"></b></p>
-  <button onclick="exportResults()" style="background:#e8a030;color:#fff;border:none;padding:14px 32px;border-radius:10px;cursor:pointer;font-size:15px;font-weight:700;margin-top:16px">Download JSON</button>
-</div>
+
 <script>
-// Korean labels via JS to avoid encoding issues
 var L = {
-  title: '이미지 풍 탐색',
-  loading: '로딩 중...',
-  resume: '⏸ {n}번째부터 이어하기',
+  title: '이미지 풀 탐색',
+  selected: '후보',
   batch: '배치',
-  images: '이미지',
-  selected: '후보 선택',
-  pick: '✅ 후보',
-  skip: '건너뛰기',
-  saveNext: '저장 완료 → 다음 100장 ▶',
-  notice: '⚠ 이번 배치 후보가 {n}장 이상입니다. 부스트 기준 재검토 필요할 수 있습니다.',
-  done: '전체 탐색 완료!',
-  totalPicked: '전체 후보',
-  pending: '미결',
-  skipped: '건너뛰',
-  failLoad: 'pool_manifest.json 로드 실패: '
+  q1lbl: '① 성구 가능성',
+  q1hint: '이 사진으로 성구 연결이 가능한가?',
+  q2lbl: '② 사진 품질',
+  q2hint: '선명도·구도·생동감',
+  q3lbl: '③ 주제 명확성',
+  q3hint: '보는 사람이 주제를 바로 알수 있는가?',
+  ok: '좋음',
+  fix: '보통',
+  no: '낙음',
+  approve: '✅ 후보',
+  modify: '✏️ 권류',
+  reject: '❌ 탈락',
+  comment: '코멘트 (선택)',
+  submit: '다음 ▶',
+  skipBtn: '건너뛰기 (나중에)',
+  resumeMsg: '이전 세션이 있습니다. 이어하시겠어요?',
+  resumeBtn: '이어하기 ▶',
+  batchDoneTitle: '배치 완료 — 저장됨',
+  batchNext: '다음 100장 시작하기 ▶',
+  doneTitle: '전체 탐색 완료!',
+  doneMsg: '전체 후보: ',
+  download: '결과 JSON 다운로드',
+  loading: '로딩 중...'
 };
 
-var BATCH_SIZE = 100;
-var AS_URL = 'https://script.google.com/macros/s/AKfycbzAAlGIpLxqjlrQ9tQMy-HO2Z9EKjMJNph5zP_Gohw49Yl1a2-QWo6BhFy8in6pKqcV/exec';
-var STORAGE_KEY = 'odina_pool_browse_v1';
+var BATCH = 100;
+var AS = 'https://script.google.com/macros/s/AKfycbzAAlGIpLxqjlrQ9tQMy-HO2Z9EKjMJNph5zP_Gohw49Yl1a2-QWo6BhFy8in6pKqcV/exec';
+var KEY = 'odina_pool_v3';
 var POOL = [];
-var state = { batchIndex: 0, results: {}, completedBatches: [] };
+var state = { idx: 0, results: {}, batches: [] };
+var cur = { q1: null, q2: null, q3: null, verdict: null, comment: '' };
 
-function setText(id, text) { document.getElementById(id).textContent = text; }
+function setText(id, t) { var el = document.getElementById(id); if (el) el.textContent = t; }
 
 async function init() {
-  document.getElementById('h-title').textContent = L.title;
-  setText('progress', L.loading);
+  setText('h1', L.title);
+  setText('lbl_selected', L.selected);
 
-  var saved = localStorage.getItem(STORAGE_KEY);
+  var saved = localStorage.getItem(KEY);
   if (saved) {
-    try { state = JSON.parse(saved); } catch(e) {}
-    if (state.batchIndex > 0) {
-      var btn = document.getElementById('resume-btn');
-      btn.style.display = 'inline-block';
-      btn.textContent = L.resume.replace('{n}', state.batchIndex * BATCH_SIZE);
-    }
+    try {
+      var s = JSON.parse(saved);
+      if (s && s.idx > 0) {
+        state = s;
+        var bar = document.getElementById('resume-bar');
+        bar.style.display = 'flex';
+        setText('resume-msg', L.resumeMsg + ' (' + state.idx + '/' + 0 + ')');
+        var rb = document.getElementById('resume-btn');
+        rb.textContent = L.resumeBtn;
+        rb.onclick = function() { bar.style.display = 'none'; renderCard(); };
+        document.getElementById('resume-msg').textContent = L.resumeMsg;
+      }
+    } catch(e) {}
   }
 
   try {
-    var resp = await fetch('pool_manifest.json');
-    POOL = await resp.json();
+    var r = await fetch('pool_manifest.json');
+    POOL = await r.json();
   } catch(e) {
-    setText('progress', L.failLoad + e);
+    document.getElementById('host').innerHTML = '<div style="padding:20px;color:red">Load failed: ' + e + '</div>';
     return;
   }
 
-  renderBatch();
-}
-
-function resumeSession() { renderBatch(); }
-
-function getBatch() {
-  return POOL.slice(state.batchIndex * BATCH_SIZE, (state.batchIndex + 1) * BATCH_SIZE);
-}
-
-function renderBatch() {
-  var batch = getBatch();
-  var batchNum = state.batchIndex + 1;
-  var batchTotal = Math.ceil(POOL.length / BATCH_SIZE);
-  var start = state.batchIndex * BATCH_SIZE + 1;
-  var end = Math.min(start + BATCH_SIZE - 1, POOL.length);
-
-  setText('batch-num', batchNum);
-  setText('batch-total', batchTotal);
-  setText('img-range', start + '~' + end);
-  setText('progress', batchNum + '/' + batchTotal + ' | ' + POOL.length + '장');
-
-  var grid = document.getElementById('grid');
-  grid.innerHTML = '';
-
-  batch.forEach(function(img) {
-    var verdict = state.results[img.id];
-    var card = document.createElement('div');
-    card.className = 'card' + (verdict === 'pick' ? ' picked' : verdict === 'skip' ? ' skipped' : '');
-    card.id = 'c-' + img.id;
-
-    var el = document.createElement('div');
-    el.innerHTML = (verdict === 'pick' ? '<div class="picked-badge">' + L.pick + '</div>' : '') +
-      '<img src="' + img.url + '" alt="" loading="lazy">' +
-      '<div class="card-body"><div class="card-id">' + img.id + '</div><div class="btns">' +
-      '<button class="btn-pick">'+L.pick+'</button>' +
-      '<button class="btn-skip">'+L.skip+'</button>' +
-      '</div></div>';
-
-    el.querySelectorAll('.btn-pick')[0].onclick = (function(id){ return function(){ pick(id); }; })(img.id);
-    el.querySelectorAll('.btn-skip')[0].onclick = (function(id){ return function(){ skip(id); }; })(img.id);
-
-    while (el.firstChild) card.appendChild(el.firstChild);
-    grid.appendChild(card);
-  });
-
-  updateFooter();
-}
-
-function pick(id) {
-  state.results[id] = 'pick';
-  saveState();
-  var card = document.getElementById('c-' + id);
-  card.className = 'card picked';
-  if (!card.querySelector('.picked-badge')) {
-    var b = document.createElement('div');
-    b.className = 'picked-badge';
-    b.textContent = L.pick;
-    card.insertBefore(b, card.firstChild);
+  setText('g_total', POOL.length);
+  if (saved && state.idx > 0) {
+    setText('resume-msg', L.resumeMsg);
+    return; // wait for resume click
   }
-  updateFooter();
-  checkNotice();
+  renderCard();
 }
 
-function skip(id) {
-  state.results[id] = 'skip';
-  saveState();
-  document.getElementById('c-' + id).className = 'card skipped';
-  updateFooter();
-}
+function renderCard() {
+  cur = { q1: null, q2: null, q3: null, verdict: null, comment: '' };
+  var host = document.getElementById('host');
 
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-
-function updateFooter() {
-  var batch = getBatch();
-  var picked = 0, skipped = 0, pending = 0;
-  batch.forEach(function(img) {
-    var v = state.results[img.id];
-    if (v === 'pick') picked++;
-    else if (v === 'skip') skipped++;
-    else pending++;
-  });
-  setText('f-picked', picked);
-  setText('f-skipped', skipped);
-  setText('f-pending', pending);
-
-  var total = Object.values(state.results).filter(function(v){ return v === 'pick'; }).length;
-  setText('picked-count', total);
-
-  var btn = document.getElementById('next-btn');
-  btn.disabled = (pending > 0);
-  if (pending === 0) {
-    btn.textContent = L.saveNext + (picked > 0 ? ' (' + L.pick + ' ' + picked + ')' : '');
+  if (state.idx >= POOL.length) {
+    var tot = countPicked();
+    host.innerHTML =
+      '<div class="done">' +
+        '<h2>' + L.doneTitle + '</h2>' +
+        '<p>' + L.doneMsg + '<b>' + tot + '</b></p>' +
+        '<button class="next-btn" style="max-width:280px;margin:0 auto;display:block" onclick="exportResults()">' + L.download + '</button>' +
+      '</div>';
+    return;
   }
+
+  var img = POOL[state.idx];
+  updateHeader();
+
+  var batchStart = Math.floor(state.idx / BATCH) * BATCH;
+  var batchEnd = Math.min(batchStart + BATCH, POOL.length);
+  var inBatch = state.idx - batchStart + 1;
+  var batchNum = Math.floor(state.idx / BATCH) + 1;
+  var batchTot = Math.ceil(POOL.length / BATCH);
+  var pct = POOL.length ? Math.round(state.idx * 100 / POOL.length) : 0;
+
+  host.innerHTML =
+    '<div class="card">' +
+      '<img class="photo" src="' + img.url + '" alt="" onerror="this.style.opacity=\'0.15\'">' +
+      '<div class="pad">' +
+        '<div class="progress">' + L.batch + ' ' + batchNum + '/' + batchTot + ' &nbsp;&middot;&nbsp; ' + inBatch + '/' + (batchEnd-batchStart) + ' &nbsp;&middot;&nbsp; ' + pct + '%</div>' +
+        '<div class="imgid">' + img.id + '</div>' +
+
+        '<div class="step">' +
+          '<div class="lbl">' + L.q1lbl + '<span style="font-weight:400;color:#7a8696;margin-left:6px">' + L.q1hint + '</span></div>' +
+          '<div class="rate">' +
+            '<button class="ok" onclick="setQ(\'q1\',\'ok\',this)">' + L.ok + '</button>' +
+            '<button class="fix" onclick="setQ(\'q1\',\'fix\',this)">' + L.fix + '</button>' +
+            '<button class="no" onclick="setQ(\'q1\',\'no\',this)">' + L.no + '</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="step">' +
+          '<div class="lbl">' + L.q2lbl + '<span style="font-weight:400;color:#7a8696;margin-left:6px">' + L.q2hint + '</span></div>' +
+          '<div class="rate">' +
+            '<button class="ok" onclick="setQ(\'q2\',\'ok\',this)">' + L.ok + '</button>' +
+            '<button class="fix" onclick="setQ(\'q2\',\'fix\',this)">' + L.fix + '</button>' +
+            '<button class="no" onclick="setQ(\'q2\',\'no\',this)">' + L.no + '</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="step">' +
+          '<div class="lbl">' + L.q3lbl + '<span style="font-weight:400;color:#7a8696;margin-left:6px">' + L.q3hint + '</span></div>' +
+          '<div class="rate">' +
+            '<button class="ok" onclick="setQ(\'q3\',\'ok\',this)">' + L.ok + '</button>' +
+            '<button class="fix" onclick="setQ(\'q3\',\'fix\',this)">' + L.fix + '</button>' +
+            '<button class="no" onclick="setQ(\'q3\',\'no\',this)">' + L.no + '</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="step">' +
+          '<div class="lbl">&#9655; ' + L.approve.replace('✅ ','') + ' / ' + L.modify.replace('✏️ ','') + ' / ' + L.reject.replace('❌ ','') + '</div>' +
+          '<div class="verdict">' +
+            '<button class="approve" onclick="setVerdict(\'approve\')">' + L.approve + '</button>' +
+            '<button class="modify" onclick="setVerdict(\'modify\')">' + L.modify + '</button>' +
+            '<button class="reject" onclick="setVerdict(\'reject\')">' + L.reject + '</button>' +
+          '</div>' +
+          '<textarea class="comment" placeholder="' + L.comment + '" oninput="cur.comment=this.value"></textarea>' +
+        '</div>' +
+
+        '<button class="submit" id="btn-submit" onclick="submitCard()" disabled>' + L.submit + '</button>' +
+        '<button class="skip-btn" onclick="skipCard()">' + L.skipBtn + '</button>' +
+      '</div>' +
+    '</div>';
 }
 
-function checkNotice() {
-  var batch = getBatch();
-  var picked = batch.filter(function(img){ return state.results[img.id] === 'pick'; }).length;
-  var notice = document.getElementById('notice');
-  if (picked > 30) {
-    notice.style.display = 'block';
-    notice.textContent = L.notice.replace('{n}', picked);
-  } else {
-    notice.style.display = 'none';
-  }
+function setQ(q, v, el) {
+  cur[q] = v;
+  var row = el.parentElement;
+  row.querySelectorAll('button').forEach(function(b) { b.classList.remove('on'); });
+  el.classList.add('on');
+  checkSubmit();
 }
 
-async function completeBatch() {
-  var batch = getBatch();
-  var batchResults = batch.map(function(img){ return { id: img.id, verdict: state.results[img.id] }; });
-  state.completedBatches.push({ batchIndex: state.batchIndex, ts: new Date().toISOString(), results: batchResults });
+function setVerdict(v) {
+  cur.verdict = v;
+  var row = document.querySelector('.verdict');
+  if (!row) return;
+  row.querySelectorAll('button').forEach(function(b) { b.classList.remove('on'); });
+  row.querySelector('.' + v).classList.add('on');
+  checkSubmit();
+}
 
-  try {
-    await fetch(AS_URL, {
-      method: 'POST',
-      body: JSON.stringify({ type: 'pool_batch', batchIndex: state.batchIndex, ts: new Date().toISOString(), results: batchResults })
+function checkSubmit() {
+  var ok = cur.q1 && cur.q2 && cur.q3 && cur.verdict;
+  var btn = document.getElementById('btn-submit');
+  if (btn) btn.disabled = !ok;
+}
+
+function submitCard() {
+  var img = POOL[state.idx];
+  state.results[img.id] = {
+    verdict: cur.verdict,
+    q1: cur.q1, q2: cur.q2, q3: cur.q3,
+    comment: cur.comment,
+    ts: new Date().toISOString()
+  };
+  advance();
+}
+
+function skipCard() {
+  state.idx++;
+  localStorage.setItem(KEY, JSON.stringify(state));
+  renderCard();
+  updateHeader();
+}
+
+function advance() {
+  state.idx++;
+  localStorage.setItem(KEY, JSON.stringify(state));
+
+  var prev = state.idx - 1;
+  var batchStart = Math.floor(prev / BATCH) * BATCH;
+  var batchEnd = batchStart + BATCH;
+  var isLast = (state.idx === batchEnd || state.idx >= POOL.length);
+
+  if (isLast && state.batches.indexOf(batchStart) < 0) {
+    var batchItems = POOL.slice(batchStart, Math.min(batchEnd, POOL.length));
+    var batchRes = batchItems.map(function(im) {
+      var r = state.results[im.id];
+      return { id: im.id, verdict: r ? r.verdict : 'skip', q1: r ? r.q1 : null, q2: r ? r.q2 : null, q3: r ? r.q3 : null, comment: r ? r.comment : '' };
     });
-  } catch(e) { console.warn('AS POST fail:', e); }
+    state.batches.push(batchStart);
+    localStorage.setItem(KEY, JSON.stringify(state));
 
-  state.batchIndex++;
-  saveState();
+    try {
+      fetch(AS, { method: 'POST', body: JSON.stringify({ type: 'pool_batch', batchIndex: Math.floor(batchStart/BATCH), ts: new Date().toISOString(), results: batchRes }) });
+    } catch(e) {}
 
-  if (state.batchIndex * BATCH_SIZE >= POOL.length) {
-    document.getElementById('grid').style.display = 'none';
-    document.getElementById('footer').style.display = 'none';
-    document.getElementById('batch-info').style.display = 'none';
-    var ds = document.getElementById('done-screen');
-    ds.style.display = 'block';
-    ds.querySelector('h2').textContent = L.done;
-    var total = Object.values(state.results).filter(function(v){ return v === 'pick'; }).length;
-    setText('total-picked', total);
-  } else {
-    window.scrollTo(0, 0);
-    renderBatch();
+    if (state.idx >= POOL.length) { renderCard(); return; }
+
+    var picked = batchRes.filter(function(x){ return x.verdict === 'approve'; }).length;
+    document.getElementById('host').innerHTML =
+      '<div class="batch-done">' +
+        '<h2>' + L.batchDoneTitle + '</h2>' +
+        '<p>' + L.approve + ' ' + picked + ' / ' + batchRes.length + '</p>' +
+        '<button class="next-btn" onclick="renderCard()">' + L.batchNext + '</button>' +
+      '</div>';
+    return;
   }
+
+  renderCard();
+}
+
+function updateHeader() {
+  setText('g_done', state.idx);
+  setText('g_picked', countPicked());
+}
+
+function countPicked() {
+  return Object.values(state.results).filter(function(r){ return r && r.verdict === 'approve'; }).length;
 }
 
 function exportResults() {
-  var picked = Object.entries(state.results).filter(function(e){ return e[1]==='pick'; }).map(function(e){ return e[0]; });
-  var blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), total_reviewed: Object.keys(state.results).length, total_picked: picked.length, picked_ids: picked }, null, 2)], {type: 'application/json'});
+  var picked = Object.entries(state.results).filter(function(e){ return e[1] && e[1].verdict === 'approve'; }).map(function(e){ return { id: e[0], q1: e[1].q1, q2: e[1].q2, q3: e[1].q3, comment: e[1].comment }; });
+  var blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), total_reviewed: Object.keys(state.results).length, total_picked: picked.length, picks: picked }, null, 2)], {type:'application/json'});
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'pool_picks_' + new Date().toISOString().slice(0,10) + '.json';
