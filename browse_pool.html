@@ -1,0 +1,283 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>ODINA ?대?吏 ? ?먯깋</title>
+<style>
+  body{font-family:sans-serif;background:#f4f4f4;margin:0;padding:0}
+  #header{background:#1a1a2e;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+  #header h1{margin:0;font-size:16px;font-weight:700}
+  #progress{font-size:13px;color:#aaa;flex:1}
+  #resume-btn{background:#e8a030;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700}
+  #resume-btn:hover{background:#c8882a}
+  #batch-info{background:#fff;border-bottom:1px solid #ddd;padding:10px 20px;font-size:13px;color:#555;display:flex;gap:20px;align-items:center}
+  #batch-info span{font-weight:700;color:#1a1a2e}
+  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;padding:16px 20px}
+  .card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.12);position:relative}
+  .card img{width:100%;height:180px;object-fit:cover;display:block;background:#eee}
+  .card-body{padding:8px}
+  .card-id{font-size:10px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:6px}
+  .btns{display:flex;gap:6px}
+  .btn-pick{flex:1;background:#2e7d32;color:#fff;border:none;padding:8px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700}
+  .btn-skip{flex:1;background:#fff;color:#888;border:1.5px dashed #ccc;padding:8px;border-radius:8px;cursor:pointer;font-size:12px}
+  .btn-pick:hover{background:#1b5e20}
+  .btn-skip:hover{background:#f5f5f5}
+  .card.picked{outline:3px solid #2e7d32}
+  .card.skipped{opacity:.45}
+  .picked-badge{position:absolute;top:8px;right:8px;background:#2e7d32;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:20px}
+  #footer{background:#fff;border-top:2px solid #1a1a2e;padding:16px 20px;display:flex;align-items:center;gap:16px;position:sticky;bottom:0}
+  #footer .stat{font-size:13px;color:#555}
+  #footer .stat b{color:#2e7d32}
+  #next-btn{margin-left:auto;background:#1a1a2e;color:#fff;border:none;padding:12px 28px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700}
+  #next-btn:hover{background:#0d0d1f}
+  #next-btn:disabled{background:#aaa;cursor:default}
+  #done-screen{display:none;text-align:center;padding:60px 20px}
+  #done-screen h2{color:#1a1a2e}
+  #export-btn{background:#e8a030;color:#fff;border:none;padding:14px 32px;border-radius:10px;cursor:pointer;font-size:15px;font-weight:700;margin-top:16px}
+  #notice{background:#fff3cd;border:1px solid #ffc107;padding:10px 16px;margin:12px 20px;border-radius:8px;font-size:13px;color:#856404;display:none}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>?벝 ODINA ?대?吏 ? ?먯깋</h1>
+  <div id="progress">濡쒕뵫 以?..</div>
+  <button id="resume-btn" onclick="resumeSession()" style="display:none">???댁뼱?섍린</button>
+</div>
+
+<div id="batch-info">
+  諛곗튂 <span id="batch-num">-</span> / <span id="batch-total">-</span> &nbsp;|&nbsp;
+  ?대?吏 <span id="img-range">-</span> &nbsp;|&nbsp;
+  ?꾨낫 ?좏깮: <span id="picked-count">0</span>??</div>
+
+<div id="notice"></div>
+<div id="grid"></div>
+
+<div id="footer">
+  <div class="stat">?대쾲 諛곗튂 ?꾨낫: <b id="f-picked">0</b>??/ 嫄대꼫?: <b id="f-skipped">0</b>??/ 誘멸껐: <b id="f-pending">100</b>??/div>
+  <button id="next-btn" onclick="completeBatch()" disabled>????꾨즺 ???ㅼ쓬 100????/button>
+</div>
+
+<div id="done-screen">
+  <h2>???꾩껜 ?먯깋 ?꾨즺!</h2>
+  <p>珥?<b id="total-picked"></b>???꾨낫 ?좏깮??/p>
+  <button id="export-btn" onclick="exportResults()">寃곌낵 JSON ?ㅼ슫濡쒕뱶 & Claude???꾩넚</button>
+</div>
+
+<script>
+const BATCH_SIZE = 100;
+const AS_URL = 'https://script.google.com/macros/s/AKfycbzAAlGIpLxqjlrQ9tQMy-HO2Z9EKjMJNph5zP_Gohw49Yl1a2-QWo6BhFy8in6pKqcV/exec';
+const STORAGE_KEY = 'odina_pool_browse_v1';
+
+let POOL = [];
+let state = {
+  batchIndex: 0,      // current batch (0-based)
+  results: {},        // image_id -> 'pick' | 'skip'
+  completedBatches: []
+};
+
+async function init() {
+  // load pool manifest
+  try {
+    const resp = await fetch('pool_manifest.json');
+    POOL = await resp.json();
+  } catch(e) {
+    alert('pool_manifest.json 濡쒕뱶 ?ㅽ뙣. browse_pool.html 怨?媛숈? ?대뜑???덈뒗吏 ?뺤씤?섏꽭??');
+    return;
+  }
+
+  // restore saved state
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    state = parsed;
+    showResumeBtn();
+  }
+
+  renderBatch();
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function showResumeBtn() {
+  const btn = document.getElementById('resume-btn');
+  if (state.batchIndex > 0) {
+    btn.style.display = 'inline-block';
+    btn.textContent = `??${state.batchIndex * BATCH_SIZE}踰덉㎏遺???댁뼱?섍린`;
+  }
+}
+
+function resumeSession() {
+  renderBatch();
+}
+
+function getBatch() {
+  const start = state.batchIndex * BATCH_SIZE;
+  return POOL.slice(start, start + BATCH_SIZE);
+}
+
+function renderBatch() {
+  const batch = getBatch();
+  const batchNum = state.batchIndex + 1;
+  const batchTotal = Math.ceil(POOL.length / BATCH_SIZE);
+
+  document.getElementById('batch-num').textContent = batchNum;
+  document.getElementById('batch-total').textContent = batchTotal;
+  const start = state.batchIndex * BATCH_SIZE + 1;
+  const end = Math.min(start + BATCH_SIZE - 1, POOL.length);
+  document.getElementById('img-range').textContent = `${start}~${end}踰?;
+  document.getElementById('progress').textContent = `${batchNum}/${batchTotal} 諛곗튂 | 珥?${POOL.length}??;
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  batch.forEach(img => {
+    const verdict = state.results[img.id];
+    const card = document.createElement('div');
+    card.className = 'card' + (verdict === 'pick' ? ' picked' : verdict === 'skip' ? ' skipped' : '');
+    card.id = 'card-' + img.id;
+    card.innerHTML = `
+      ${verdict === 'pick' ? '<div class="picked-badge">???꾨낫</div>' : ''}
+      <img src="${img.url}" alt="${img.id}" loading="lazy" onerror="this.style.background='#eee';this.alt='?대?吏 ?놁쓬'">
+      <div class="card-body">
+        <div class="card-id">${img.id}</div>
+        <div class="btns">
+          <button class="btn-pick" onclick="pick('${img.id}')">???꾨낫</button>
+          <button class="btn-skip" onclick="skip('${img.id}')">嫄대꼫?곌린</button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  updateFooter();
+}
+
+function pick(id) {
+  state.results[id] = 'pick';
+  saveState();
+  const card = document.getElementById('card-' + id);
+  card.className = 'card picked';
+  card.querySelector('.picked-badge') || (card.insertAdjacentHTML('afterbegin', '<div class="picked-badge">???꾨낫</div>'));
+  updateFooter();
+  showNoticeIfLogicChange(id);
+}
+
+function skip(id) {
+  state.results[id] = 'skip';
+  saveState();
+  const card = document.getElementById('card-' + id);
+  card.className = 'card skipped';
+  updateFooter();
+}
+
+function updateFooter() {
+  const batch = getBatch();
+  let picked = 0, skipped = 0, pending = 0;
+  batch.forEach(img => {
+    const v = state.results[img.id];
+    if (v === 'pick') picked++;
+    else if (v === 'skip') skipped++;
+    else pending++;
+  });
+  document.getElementById('f-picked').textContent = picked;
+  document.getElementById('f-skipped').textContent = skipped;
+  document.getElementById('f-pending').textContent = pending;
+
+  const totalPicked = Object.values(state.results).filter(v => v === 'pick').length;
+  document.getElementById('picked-count').textContent = totalPicked;
+
+  // enable next button only when all images in batch are decided
+  document.getElementById('next-btn').disabled = (pending > 0);
+  if (pending === 0) {
+    document.getElementById('next-btn').textContent = picked > 0
+      ? `????꾨즺 ???ㅼ쓬 100????(?꾨낫 ${picked}???ы븿)`
+      : '????꾨즺 ???ㅼ쓬 100????;
+  }
+}
+
+async function completeBatch() {
+  const batch = getBatch();
+  const batchResults = batch.map(img => ({
+    id: img.id,
+    verdict: state.results[img.id]
+  }));
+
+  state.completedBatches.push({
+    batchIndex: state.batchIndex,
+    ts: new Date().toISOString(),
+    results: batchResults
+  });
+
+  // POST to Apps Script
+  try {
+    await fetch(AS_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'pool_batch',
+        batchIndex: state.batchIndex,
+        ts: new Date().toISOString(),
+        results: batchResults
+      })
+    });
+  } catch(e) {
+    // non-blocking ??local state is saved
+    console.warn('Apps Script POST ?ㅽ뙣 (濡쒖뺄 ??μ? ?꾨즺):', e);
+  }
+
+  state.batchIndex++;
+  saveState();
+
+  if (state.batchIndex * BATCH_SIZE >= POOL.length) {
+    // all done
+    document.getElementById('grid').style.display = 'none';
+    document.getElementById('footer').style.display = 'none';
+    document.getElementById('batch-info').style.display = 'none';
+    const screen = document.getElementById('done-screen');
+    screen.style.display = 'block';
+    const total = Object.values(state.results).filter(v => v === 'pick').length;
+    document.getElementById('total-picked').textContent = total;
+  } else {
+    window.scrollTo(0, 0);
+    renderBatch();
+  }
+}
+
+function exportResults() {
+  const picked = Object.entries(state.results)
+    .filter(([_, v]) => v === 'pick')
+    .map(([id]) => id);
+
+  const blob = new Blob([JSON.stringify({
+    exported_at: new Date().toISOString(),
+    total_reviewed: Object.keys(state.results).length,
+    total_picked: picked.length,
+    picked_ids: picked
+  }, null, 2)], {type: 'application/json'});
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pool_picks_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+
+function showNoticeIfLogicChange(id) {
+  // notify if image pattern suggests boost/logic change needed
+  // simple heuristic: if picked count > 30 in single batch, suggest review
+  const batch = getBatch();
+  const pickedInBatch = batch.filter(img => state.results[img.id] === 'pick').length;
+  const notice = document.getElementById('notice');
+  if (pickedInBatch > 30) {
+    notice.style.display = 'block';
+    notice.textContent = `???대쾲 諛곗튂 ?꾨낫媛 ${pickedInBatch}???댁긽?낅땲?? 遺?ㅽ듃 湲곗? ?먮뒗 ?꾪꽣 濡쒖쭅 ?ш????꾩슂?????덉뒿?덈떎. (Claude?먭쾶 ?뚮┝)`;
+  } else {
+    notice.style.display = 'none';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
+
