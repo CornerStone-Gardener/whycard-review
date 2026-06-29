@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ODINA WhyCard Review</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f0f0f0;font-family:'Apple SD Gothic Neo',sans-serif;min-height:100vh}
+#header{background:#1a1a2e;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+#header h1{font-size:15px;font-weight:700;flex:1}
+#prog-text{font-size:12px;color:#aaa}
+#wrap{display:flex;justify-content:center;padding:16px 8px 100px}
+#card-area{width:100%;max-width:440px}
+.wcard{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)}
+.wcard img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#e0e0e0}
+.wcard-body{padding:16px}
+.verse-ref{font-size:13px;color:#888;margin-bottom:4px}
+.verse-text{font-size:16px;color:#1a1a2e;font-weight:600;margin-bottom:14px;line-height:1.6;border-left:3px solid #1a1a2e;padding-left:10px}
+.field{margin-bottom:12px}
+.field-label{font-size:11px;color:#999;font-weight:700;letter-spacing:.5px;margin-bottom:4px}
+.field-val{font-size:15px;color:#333;line-height:1.7}
+.wi02-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;margin-bottom:10px}
+.wi02-SKIP{background:#e8f5e9;color:#2e7d32}
+.wi02-FLAG{background:#fff3cd;color:#856404}
+.wi02-BLOCK{background:#fdecea;color:#c62828}
+.acr-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;margin-bottom:6px;margin-left:6px}
+.acr-AGREE_GOLD,.acr-MAJORITY_GOLD{background:#c8e6c9;color:#1b5e20}
+.acr-AGREE_OUT,.acr-MAJORITY_OUT{background:#fdecea;color:#b71c1c}
+.acr-AGREE_HOLD,.acr-MAJORITY_HOLD{background:#fff8e1;color:#e65100}
+.acr-DISAGREE{background:#ede7f6;color:#4527a0}
+.ai-verdict-box{border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.5;border-left:4px solid #ccc}
+.ai-verdict-box.ai-gold{background:#e8f5e9;border-color:#2e7d32}
+.ai-verdict-box.ai-out{background:#fdecea;border-color:#c62828}
+.ai-verdict-box.ai-hold{background:#fff8e1;border-color:#e8a030}
+.ai-verdict-box.ai-disagree{background:#ede7f6;border-color:#7c4dff}
+.ai-verdict-label{font-weight:700;font-size:12px;margin-bottom:2px}
+.verdicts{display:flex;gap:8px;margin:14px 0 8px}
+.v-btn{flex:1;padding:12px 4px;border:2px solid #ddd;border-radius:10px;background:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.v-btn.sel-gold{background:#2e7d32;color:#fff;border-color:#2e7d32}
+.v-btn.sel-hold{background:#e8a030;color:#fff;border-color:#e8a030}
+.v-btn.sel-out{background:#c62828;color:#fff;border-color:#c62828}
+.v-btn:hover{opacity:.85}
+textarea{width:100%;border:1px solid #ddd;border-radius:8px;padding:8px;font-size:12px;resize:vertical;min-height:50px;font-family:inherit}
+#footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #1a1a2e;padding:12px 16px;display:flex;align-items:center;gap:12px}
+#footer-stat{font-size:12px;color:#555;flex:1}
+#next-btn{background:#1a1a2e;color:#fff;border:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
+#next-btn:disabled{background:#aaa;cursor:default}
+#counter{font-size:12px;color:#aaa;text-align:right;margin-top:6px}
+#done-screen{display:none;text-align:center;padding:60px 20px}
+#done-screen h2{color:#1a1a2e;margin-bottom:12px}
+#done-screen p{color:#555;margin-bottom:20px}
+.summary-box{background:#fff;border-radius:12px;padding:20px;margin:16px 0;text-align:left}
+.summary-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
+.summary-row:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>ODINA WhyCard Review</h1>
+  <div id="prog-text">-</div>
+</div>
+<div id="wrap">
+  <div id="card-area">
+    <div id="wc-display"></div>
+    <div id="done-screen"></div>
+  </div>
+</div>
+<div id="footer">
+  <div id="footer-stat"></div>
+  <button id="next-btn" onclick="nextCard()" disabled></button>
+</div>
+
+<script>
+var AS_URL = 'https://script.google.com/macros/s/AKfycbzAAlGIpLxqjlrQ9tQMy-HO2Z9EKjMJNph5zP_Gohw49Yl1a2-QWo6BhFy8in6pKqcV/exec';
+var STORAGE_KEY = 'odina_wc_review_v1';
+var BATCH = 100;
+
+var CARDS = [];
+var state = { idx: 0, verdicts: {}, comments: {} };
+
+var ACR_KO = {
+  'AGREE_GOLD':    { cls: 'ai-gold',     label: '🤖 AI 추천: GOLD 유력', desc: 'AI 교차검수 모두 GOLD 판정' },
+  'MAJORITY_GOLD': { cls: 'ai-gold',     label: '🤖 AI 추천: GOLD 우세', desc: 'AI 다수 GOLD 판정' },
+  'AGREE_HOLD':    { cls: 'ai-hold',     label: '🤖 AI: 보류 (만장일치)', desc: 'AI 교차검수 모두 보류' },
+  'MAJORITY_HOLD': { cls: 'ai-hold',     label: '🤖 AI: 보류 우세', desc: 'AI 다수 보류 판정' },
+  'AGREE_OUT':     { cls: 'ai-out',      label: '🤖 AI: 탈락 (만장일치)', desc: 'AI 교차검수 모두 탈락' },
+  'MAJORITY_OUT':  { cls: 'ai-out',      label: '🤖 AI: 탈락 우세', desc: 'AI 다수 탈락 판정' },
+  'DISAGREE':      { cls: 'ai-disagree', label: '🤖 AI: 의견 불일치 → 사람 판정 필요', desc: 'AI끼리 의견이 갈림 — 직접 확인 필요' },
+};
+
+var L = {
+  title: 'ODINA WhyCard Review',
+  gold: '✅ GOLD',
+  hold: '✏️ 보류',
+  out: '❌ 탈락',
+  skip: '다음 잠시부터',
+  next: '다음 카드 ▶',
+  save_next: '저장 → 다음 ▶',
+  batch_done: '배치 완료 → 다음 100장 ▶',
+  all_done: '✅ 전체 검수 완료!',
+  comment_ph: '코멘트 (선택)',
+  s1_label: 'S1 상황공감',
+  s2_label: 'S2 연결이유',
+  s3_label: 'S3 적용',
+  verse_label: '선택 말씨',
+};
+
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function load() {
+  var s = localStorage.getItem(STORAGE_KEY);
+  if (s) { try { state = JSON.parse(s); } catch(e){} }
+}
+
+async function init() {
+  load();
+  try {
+    var r = await fetch('whycard_manifest_500.json');
+    CARDS = await r.json();
+  } catch(e) {
+    document.getElementById('wc-display').innerHTML = '<p style="color:red;padding:20px">whycard_manifest_500.json 로드 실패</p>';
+    return;
+  }
+  render();
+}
+
+function render() {
+  if (state.idx >= CARDS.length) { showDone(); return; }
+  var c = CARDS[state.idx];
+  var v = state.verdicts[c.id] || '';
+  var cm = state.comments[c.id] || '';
+  var wi = c.wi02 || 'SKIP';
+  var batchNum = Math.floor(state.idx / BATCH) + 1;
+  var batchTotal = Math.ceil(CARDS.length / BATCH);
+  var posInBatch = (state.idx % BATCH) + 1;
+
+  document.getElementById('prog-text').textContent =
+    '배치 ' + batchNum + '/' + batchTotal + ' | ' + (state.idx+1) + '/' + CARDS.length;
+
+  var goldDone = Object.values(state.verdicts).filter(function(x){return x==='gold';}).length;
+  var holdDone = Object.values(state.verdicts).filter(function(x){return x==='hold';}).length;
+  var outDone = Object.values(state.verdicts).filter(function(x){return x==='out';}).length;
+  document.getElementById('footer-stat').innerHTML =
+    'GOLD <b style="color:#2e7d32">' + goldDone + '</b> | 보류 <b style="color:#e8a030">' + holdDone + '</b> | 탈락 <b style="color:#c62828">' + outDone + '</b>';
+
+  var nb = document.getElementById('next-btn');
+  nb.disabled = !v;
+  if (v) {
+    var isLast = state.idx === CARDS.length - 1;
+    var isBatchEnd = posInBatch === BATCH;
+    nb.textContent = isLast ? L.all_done : (isBatchEnd ? L.batch_done : L.next);
+  } else {
+    nb.textContent = L.next;
+  }
+
+  var acr = c.acr_result || '';
+  var acrInfo = ACR_KO[acr] || { cls: 'ai-disagree', label: '🤖 AI: 미평가', desc: '' };
+  document.getElementById('wc-display').innerHTML =
+    '<div class="wcard">' +
+    '<img src="' + c.url + '" alt="" onerror="this.style.background=\'#ddd\'">' +
+    '<div class="wcard-body">' +
+    '<span class="wi02-badge wi02-' + wi + '">WI-02: ' + wi + '</span>' +
+    '<div class="ai-verdict-box ' + acrInfo.cls + '">' +
+    '<div class="ai-verdict-label">' + acrInfo.label + '</div>' +
+    (acrInfo.desc ? '<div>' + esc(acrInfo.desc) + '</div>' : '') +
+    '</div>' +
+    '<div class="verse-ref">' + esc(c.verse_ref) + '</div>' +
+    '<div class="verse-text">' + esc(c.verse_text) + '</div>' +
+    '<div class="field"><div class="field-label">' + L.s1_label + '</div><div class="field-val">' + esc(c.S1) + '</div></div>' +
+    '<div class="field"><div class="field-label">' + L.s2_label + '</div><div class="field-val">' + esc(c.S2) + '</div></div>' +
+    '<div class="field"><div class="field-label">' + L.s3_label + '</div><div class="field-val">' + esc(c.S3) + '</div></div>' +
+    '<div class="verdicts">' +
+    '<button class="v-btn' + (v==='gold'?' sel-gold':'') + '" onclick="verdict(\'gold\')">' + L.gold + '</button>' +
+    '<button class="v-btn' + (v==='hold'?' sel-hold':'') + '" onclick="verdict(\'hold\')">' + L.hold + '</button>' +
+    '<button class="v-btn' + (v==='out'?' sel-out':'') + '" onclick="verdict(\'out\')">' + L.out + '</button>' +
+    '</div>' +
+    '<textarea placeholder="' + L.comment_ph + '" onchange="setComment(this.value)">' + esc(cm) + '</textarea>' +
+    '<div id="counter">' + state.idx + '/' + CARDS.length + ' 완료</div>' +
+    '</div></div>';
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function verdict(v) {
+  var c = CARDS[state.idx];
+  state.verdicts[c.id] = v;
+  save();
+  render();
+}
+
+function setComment(v) {
+  var c = CARDS[state.idx];
+  state.comments[c.id] = v;
+  save();
+}
+
+function nextCard() {
+  var posInBatch = (state.idx % BATCH) + 1;
+  var isBatchEnd = posInBatch === BATCH;
+  if (isBatchEnd) { postBatch(); }
+  state.idx++;
+  save();
+  window.scrollTo(0,0);
+  render();
+}
+
+function postBatch() {
+  var batchIdx = Math.floor(state.idx / BATCH);
+  var start = batchIdx * BATCH;
+  var end = Math.min(start + BATCH, CARDS.length);
+  var results = [];
+  for (var i = start; i < end; i++) {
+    var c = CARDS[i];
+    results.push({ id: c.id, verdict: state.verdicts[c.id] || '', comment: state.comments[c.id] || '' });
+  }
+  fetch(AS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ type: 'wc_batch', batchIndex: batchIdx, ts: new Date().toISOString(), results: results })
+  }).catch(function(){});
+}
+
+function showDone() {
+  document.getElementById('footer').style.display = 'none';
+  postBatch();
+  var gold = Object.values(state.verdicts).filter(function(x){return x==='gold';}).length;
+  var hold = Object.values(state.verdicts).filter(function(x){return x==='hold';}).length;
+  var out = Object.values(state.verdicts).filter(function(x){return x==='out';}).length;
+  document.getElementById('done-screen').style.display = 'block';
+  document.getElementById('done-screen').innerHTML =
+    '<h2>' + L.all_done + '</h2>' +
+    '<p>' + CARDS.length + '장 검수 완료</p>' +
+    '<div class="summary-box">' +
+    '<div class="summary-row"><span>GOLD 후보</span><span style="color:#2e7d32;font-weight:700">' + gold + '장</span></div>' +
+    '<div class="summary-row"><span>보류</span><span style="color:#e8a030;font-weight:700">' + hold + '장</span></div>' +
+    '<div class="summary-row"><span>탈락</span><span style="color:#c62828;font-weight:700">' + out + '장</span></div>' +
+    '</div>';
+  document.getElementById('wc-display').style.display = 'none';
+}
+
+init();
+</script>
+</body>
+</html>
